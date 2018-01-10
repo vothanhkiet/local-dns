@@ -1,0 +1,22 @@
+{
+    "bind": {
+        "udp": ":53",
+        "tcp": ":53"
+    },
+    "ttl": 86400,
+    "resolver": "/etc/resolv.conf",
+    "hosts": [
+        {
+            "key": "test.xip.io",
+            "ipv4": "127.0.0.1",
+            "ipv6": "::1"
+        }
+    ],
+    "tlds": [
+        {
+            "key": "xip.io",
+            "ipv4": "127.0.0.1",
+            "ipv6": "::1"
+        }
+    ]
+}
