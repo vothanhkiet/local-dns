@@ -138,14 +138,24 @@ func middleware(conf *Configuration, client *dns.Client, resolvConf *dns.ClientC
 
 				m.Answer = []dns.RR{rr1, rr2}
 			} else {
-				res, _, err := client.Exchange(r, net.JoinHostPort(resolvConf.Servers[0], resolvConf.Port))
-				if m == nil {
-					log.Fatalf("*** error: %s\n", err.Error())
+				server := resolvConf.Servers[0]
+				if len(resolvConf.Servers) > 1 {
+					server = resolvConf.Servers[1]
 				}
-				if m.Rcode != dns.RcodeSuccess {
-					log.Fatalf(" *** invalid answer name %s for %s\n", os.Args[1], os.Args[1])
+				res, _, _ := client.Exchange(r, net.JoinHostPort(server, resolvConf.Port))
+				if res == nil || res.Rcode != dns.RcodeSuccess {
+					// forward unknown result to local
+					rr1 := new(dns.A)
+					rr1.Hdr = dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: uint32(conf.TTL)}
+					rr2 := new(dns.AAAA)
+					rr2.Hdr = dns.RR_Header{Name: domain, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: uint32(conf.TTL)}
+
+					rr1.A = net.ParseIP("127.0.0.1")
+					rr2.AAAA = net.ParseIP("::1")
+					m.Answer = []dns.RR{rr1, rr2}
+				} else {
+					m.Answer = res.Answer
 				}
-				m.Answer = res.Answer
 			}
 			m.Authoritative = true
 			m.SetReply(r)
